@@ -1,0 +1,37 @@
+### Remove shortened url
+DELETE http://localhost:8080/d9a45e
+Accept: application/json
+
+### INVALID hashed redirection
+GET http://localhost:8080/124asc
+Accept: application/json
+
+### VALID hashed redirection
+# @no-redirect
+GET http://localhost:8080/d9a45e
+Accept: application/json
+
+### WRONG JSON format
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "wrong_key": "https://google.com/test"
+}
+
+### WRONG URL
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "url": "http"
+}
+
+### WORKING ONE
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "url": "https://google.com.br",
+  "valid-days": 1
+}
