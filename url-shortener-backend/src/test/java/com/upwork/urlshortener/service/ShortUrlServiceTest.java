@@ -2,6 +2,7 @@ package com.upwork.urlshortener.service;
 
 import com.upwork.urlshortener.dto.ShortUrlRequest;
 import com.upwork.urlshortener.dto.ShortUrlResponse;
+import com.upwork.urlshortener.exception.InvalidUrlException;
 import com.upwork.urlshortener.hash.Hash;
 import com.upwork.urlshortener.model.ShortUrl;
 import com.upwork.urlshortener.repository.ShortUrlRepository;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ShortUrlServiceTest {
 
-    private static final String HASH = "asdfgh";
+    private static final String HASH = "qwerty";
     private static final String CONTEXT = "http://localhost:8080";
     @InjectMocks
     private ShortUrlService service;
@@ -61,7 +61,8 @@ class ShortUrlServiceTest {
     @Test
     void testCreationInvalidUrl() {
         String originalUrl = "google.com";
-        assertThrows(ResponseStatusException.class, () -> service.create(new ShortUrlRequest(originalUrl, 1), CONTEXT));
+        ShortUrlRequest request = new ShortUrlRequest(originalUrl, 1);
+        assertThrows(InvalidUrlException.class, () -> service.create(request, CONTEXT));
     }
 
     @Test

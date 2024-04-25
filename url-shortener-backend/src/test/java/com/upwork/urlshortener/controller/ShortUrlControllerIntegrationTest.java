@@ -60,12 +60,7 @@ class ShortUrlControllerIntegrationTest extends AbstractSpringIntegrationTest {
 
     @Test
     void shouldDeleteShortUrl() throws Exception {
-        shortUrlRepository.save(ShortUrl.builder()
-                .key(HASH)
-                .originalUrl(GOOGLE_COM)
-                .url("https://localhost/" + HASH)
-                .expiresAt(LocalDateTime.now().plusDays(1))
-                .build());
+        insertOneUrl();
 
         this.mockMvc.perform(delete("/{hashed}", HASH))
                 .andDo(print())
@@ -74,12 +69,7 @@ class ShortUrlControllerIntegrationTest extends AbstractSpringIntegrationTest {
 
     @Test
     void shouldRedirectShortUrl() throws Exception {
-        shortUrlRepository.save(ShortUrl.builder()
-                .key(HASH)
-                .originalUrl(GOOGLE_COM)
-                .url("https://localhost/" + HASH)
-                .expiresAt(LocalDateTime.now().plusDays(1))
-                .build());
+        insertOneUrl();
 
         this.mockMvc.perform(get("/{hashed}", HASH))
                 .andDo(print())
@@ -89,16 +79,35 @@ class ShortUrlControllerIntegrationTest extends AbstractSpringIntegrationTest {
 
     @Test
     void shouldReturnNotFoundWhenRedirectInvalidShortUrl() throws Exception {
+        insertOneUrl();
+        this.mockMvc.perform(get("/{hashed}", HASH+"a"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Not Found"))
+                .andExpect(jsonPath("$.detail").value("URL not found"));
+    }
+
+    @Test
+    void shouldIncrementNumberOfRedirects() throws Exception {
+        insertOneUrl();
+        this.mockMvc.perform(get("/{hashed}", HASH))
+                .andDo(print())
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", GOOGLE_COM));
+
+        this.mockMvc.perform(get("/{hashed}", HASH))
+                .andDo(print())
+                .andExpect(status().isMovedPermanently())
+                .andExpect(header().string("Location", GOOGLE_COM));
+
+        shortUrlRepository.findByKey(HASH).ifPresent(url -> assertEquals(2, url.getRedirects()));
+    }
+
+    private void insertOneUrl() {
         shortUrlRepository.save(ShortUrl.builder()
                 .key(HASH)
                 .originalUrl(GOOGLE_COM)
                 .url("https://localhost/" + HASH)
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .build());
-
-        this.mockMvc.perform(get("/{hashed}", HASH+"a"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.title").value("Not Found"))
-                .andExpect(jsonPath("$.detail").value("URL not found"));
     }
 }

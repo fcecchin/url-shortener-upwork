@@ -1,16 +1,15 @@
 package com.upwork.urlshortener.annotation;
 
+import com.upwork.urlshortener.exception.IpRateLimitException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -31,9 +30,8 @@ public class IpRateLimiterAspectComponent {
 
         if (isRateLimited(key, ipRateLimit.limit(), ipRateLimit.duration())) {
             LOGGER.info("IP '{}' has request limit", ip);
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded for IP: " + ip);
+            throw new IpRateLimitException("Rate limit exceeded for IP: " + ip);
         }
-        LOGGER.info("IP '{}' has not request limit", ip);
         return joinPoint.proceed();
     }
 

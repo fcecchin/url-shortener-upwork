@@ -51,6 +51,15 @@ public class ShortUrlService {
     }
 
     @Cacheable(value = "hashedUrls", key = "#hashed", unless = "#result.redirects < 10")
+    public ShortUrl redirect(String hashed) {
+        ShortUrl url = findByHash(hashed);
+        // increment number of redirects (clicks) done to this URL
+        url.setRedirects(url.getRedirects() + 1);
+        repository.save(url);
+        return url;
+    }
+
+
     public ShortUrl findByHash(String hashed) {
         return repository.findByKey(hashed)
                 .orElseThrow(() -> new ResourceNotFoundException("URL not found"));
@@ -58,7 +67,6 @@ public class ShortUrlService {
 
 
     public void delete(String hashed) {
-        @SuppressWarnings("SpringCacheableMethodCallsInspection")
         ShortUrl url = findByHash(hashed);
 
         repository.delete(url);

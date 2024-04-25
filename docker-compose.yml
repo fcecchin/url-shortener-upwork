@@ -5,8 +5,8 @@ services:
     container_name: url-shortener-frontend
     ports:
       - "8888:80"
-  backend:
-    build: url-shortener-backend
-    container_name: url-shortener-backend
-    ports:
-      - "8080:8080"
+#  backend:
+#    build: url-shortener-backend
+#    container_name: url-shortener-backend
+#    ports:
+#      - "8080:8080"

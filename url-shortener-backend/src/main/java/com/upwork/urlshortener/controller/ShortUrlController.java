@@ -32,9 +32,10 @@ public class ShortUrlController {
         return ResponseEntity.created(URI.create(requestBody.url())).body(responseBody);
     }
 
+    @IpRateLimit
     @GetMapping("/{hashed}")
     public ResponseEntity<Void> redirect(@PathVariable String hashed) {
-        ShortUrl shortUrl = service.findByHash(hashed);
+        ShortUrl shortUrl = service.redirect(hashed);
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(shortUrl.getOriginalUrl()));
         return new ResponseEntity<>(headers, HttpStatus.MOVED_PERMANENTLY);

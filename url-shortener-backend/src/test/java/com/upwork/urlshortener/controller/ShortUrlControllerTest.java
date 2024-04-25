@@ -86,7 +86,7 @@ class ShortUrlControllerTest {
 
     @Test
     void testRedirectUrlWithSuccess() throws Exception {
-        when(shortUrlService.findByHash(HASH)).thenReturn(ShortUrl.builder()
+        when(shortUrlService.redirect(HASH)).thenReturn(ShortUrl.builder()
                 .originalUrl(ORIGINAL_URL)
                 .url(CONTEXT + "/" + HASH)
                 .redirects(1L)

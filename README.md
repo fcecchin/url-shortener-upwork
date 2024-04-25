@@ -1,4 +1,7 @@
 ## Upwork Task
+
+**Github:** https://github.com/fcecchin/url-shortener-upwork
+
 Create a simple URL shortener service (UI is optional but will be considered a plus). Plan the implementation
 to be suitable for very high volume of traffic and large amounts of data.
 
@@ -33,5 +36,5 @@ build them and allow you to access it as [http://localhost:8888](http://localhos
 
 ## References
 
-- https://www.baeldung.com/spring-boot-evict-cache
+- http://www.isthe.com/chongo/tech/comp/fnv/index.html
 - https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.testing.testcontainers.service-connections
