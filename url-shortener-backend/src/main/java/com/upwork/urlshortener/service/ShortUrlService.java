@@ -7,6 +7,7 @@ import com.upwork.urlshortener.exception.ResourceNotFoundException;
 import com.upwork.urlshortener.hash.Hash;
 import com.upwork.urlshortener.model.ShortUrl;
 import com.upwork.urlshortener.repository.ShortUrlRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class ShortUrlService {
         this.hashAlgorithm = hashAlgo;
     }
 
+    @Transactional
     public ShortUrlResponse create(ShortUrlRequest requestBody, String context) {
         validateUrl(requestBody.url());
         String hashed = hashAlgorithm.hash(requestBody.url());
@@ -66,6 +68,7 @@ public class ShortUrlService {
     }
 
 
+    @Transactional
     public void delete(String hashed) {
         ShortUrl url = findByHash(hashed);
 
@@ -76,6 +79,7 @@ public class ShortUrlService {
     /**
      * Scheduled task that purgues all expired URLs. Runs every day at 1am
      */
+    @Transactional
     @Scheduled(cron = "0 0 1 * * *")
     @CacheEvict(value = "hashedUrls", allEntries = true)
     public void purgeExpiredUrls() {
@@ -85,6 +89,7 @@ public class ShortUrlService {
 
     private void validateUrl(@NotNull(message = "Missing field: url") String url) {
         try {
+            //noinspection ResultOfMethodCallIgnored
             URI.create(url).toURL();
         } catch (Exception e) {
             LOGGER.error("Invalid URL: {}", url);

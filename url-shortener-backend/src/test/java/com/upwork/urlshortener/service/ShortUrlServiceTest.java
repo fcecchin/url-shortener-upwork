@@ -38,10 +38,11 @@ class ShortUrlServiceTest {
 
     @BeforeEach
     void setUp() {
-        shortUrl = new ShortUrl();
-        shortUrl.setKey(HASH);
-        shortUrl.setOriginalUrl("https://google.com");
-        shortUrl.setUrl(CONTEXT + "/" + HASH);
+        shortUrl = ShortUrl.builder()
+                .key(HASH)
+                .originalUrl("https://google.com")
+                .url(CONTEXT + "/" + HASH)
+                .build();
     }
 
     @Test
