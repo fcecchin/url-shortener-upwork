@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -44,5 +46,17 @@ public class ShortUrl {
     @NotNull
     @Builder.Default
     private Long redirects = 0L;
+
+    @Column
+    @Length(max = 8)
+    private String customKey;
+
+    @Column
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @Column
+    @LastModifiedDate
+    private LocalDateTime visitedAt;
 }
 

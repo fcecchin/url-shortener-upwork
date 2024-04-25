@@ -1,5 +1,6 @@
 package com.upwork.urlshortener;
 
+import com.upwork.urlshortener.dto.ShortUrlRequest;
 import com.upwork.urlshortener.model.ShortUrl;
 import com.upwork.urlshortener.repository.ShortUrlRepository;
 import com.upwork.urlshortener.service.ShortUrlService;
@@ -10,8 +11,7 @@ import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -51,6 +51,7 @@ class ShortUrlIntegrationTest extends AbstractSpringIntegrationTest {
 
         Optional<ShortUrl> shortUrl = repository.findByKey(HASH);
         assertTrue(shortUrl.isPresent());
+        assertNotNull(shortUrl.get().getCreatedAt());
         assertEquals(HASH, shortUrl.get().getKey());
         assertTrue(shortUrl.get().getExpiresAt().isAfter(LocalDateTime.now()));
         assertEquals(GOOGLE_COM, shortUrl.get().getOriginalUrl());
@@ -74,6 +75,12 @@ class ShortUrlIntegrationTest extends AbstractSpringIntegrationTest {
                 .andDo(print())
                 .andExpect(status().isMovedPermanently())
                 .andExpect(header().string("Location", GOOGLE_COM));
+
+        repository.findByKey(HASH).ifPresent(url -> {
+            assertEquals(1, url.getRedirects());
+            assertNotNull(url.getVisitedAt());
+        });
+
     }
 
     @Test
@@ -123,4 +130,62 @@ class ShortUrlIntegrationTest extends AbstractSpringIntegrationTest {
         service.purgeExpiredUrls();
         assertEquals(0, repository.count());
     }
+
+    @Test
+    void testCreationSameEncodedUrlShouldCreateOne() throws Exception {
+        String body = """
+                {
+                  "url": "https://www.example.org/demo.php?id=design",
+                  "valid-days": 1
+                }
+                """;
+        this.mockMvc.perform(post("/").content(body).contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isCreated());
+
+        body = """
+                {
+                  "url": "https://www.example.org/demo.php%3Fid%3Ddesign",
+                  "valid-days": 1
+                }
+                """;
+
+        this.mockMvc.perform(post("/").content(body).contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isCreated());
+
+        assertEquals(1, repository.count());
+    }
+
+    @Test
+    void testCreationCustomUrl() throws Exception {
+        String body = """
+                {
+                  "url": "https://www.example.org/",
+                  "valid-days": 1,
+                  "custom-key": "upwork"
+                }
+                """;
+        this.mockMvc.perform(post("/").content(body).contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.key").value("upwork"));
+
+        assertEquals(1, repository.count());
+    }
+
+    @Test
+    void testCreationExistingCustomUrlShouldThrow() throws Exception {
+        var customUrl = new ShortUrlRequest("https://www.example.org/", 1, "upwork");
+        service.create(customUrl, "http://localhost");
+
+        String body = """
+                {
+                  "url": "https://www.example.org/",
+                  "valid-days": 1,
+                  "custom-key": "upwork"
+                }
+                """;
+        this.mockMvc.perform(post("/").content(body).contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("409 CONFLICT \"Custom URL already in use\""));
+
+        assertEquals(1, repository.count());}
 }

@@ -2,6 +2,7 @@ package com.upwork.urlshortener.service;
 
 import com.upwork.urlshortener.dto.ShortUrlRequest;
 import com.upwork.urlshortener.dto.ShortUrlResponse;
+import com.upwork.urlshortener.exception.InvalidCustomKeyException;
 import com.upwork.urlshortener.exception.InvalidUrlException;
 import com.upwork.urlshortener.exception.ResourceNotFoundException;
 import com.upwork.urlshortener.hash.Hash;
@@ -16,9 +17,13 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class ShortUrlService {
@@ -37,13 +42,21 @@ public class ShortUrlService {
 
     @Transactional
     public ShortUrlResponse create(ShortUrlRequest requestBody, String context) {
-        validateUrl(requestBody.url());
-        String hashed = hashAlgorithm.hash(requestBody.url());
-        ShortUrl saved = repository.findByKey(hashed).orElseGet(() -> {
+        String decodedUrl = URLDecoder.decode(requestBody.url(), StandardCharsets.UTF_8);
+        validateUrl(decodedUrl);
+        boolean isCustomKey = StringUtils.hasText(requestBody.customKey());
+        String key = isCustomKey ? requestBody.customKey() : hashAlgorithm.hash(decodedUrl);
+        Optional<ShortUrl> opUrl = repository.findByKey(key);
+        if (opUrl.isPresent() && isCustomKey) {
+            LOGGER.info("URL already created from {} to {}", opUrl.get().getOriginalUrl(), opUrl.get().getUrl());
+            throw new InvalidCustomKeyException("Custom URL already in use");
+        }
+        ShortUrl saved = opUrl.orElseGet(() -> {
             ShortUrl url = ShortUrl.builder()
                     .originalUrl(requestBody.url())
-                    .key(hashed)
-                    .url(context + "/" + hashed)
+                    .key(key)
+                    .url(context + "/" + key)
+                    .createdAt(LocalDateTime.now())
                     .expiresAt(LocalDateTime.now().plusDays(validDays))
                     .build();
             return repository.save(url);
@@ -57,6 +70,7 @@ public class ShortUrlService {
         ShortUrl url = findByHash(hashed);
         // increment number of redirects (clicks) done to this URL
         url.setRedirects(url.getRedirects() + 1);
+        url.setVisitedAt(LocalDateTime.now());
         repository.save(url);
         return url;
     }

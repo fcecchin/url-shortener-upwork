@@ -19,13 +19,6 @@ class FowlerNollVoHashTest {
         assertEquals(hashed1, hashed2);
     }
 
-    @Test
-    void testHashForSameUrlEncodedShouldBeSame() {
-        String plainUrl = fowlerNollVoHash.hash("https://www.example.org/demo.php?id=design");
-        String encodedUrl = fowlerNollVoHash.hash("https://www.example.org/demo.php%3Fid%3Ddesign");
-        assertEquals(plainUrl, encodedUrl);
-    }
-
     @ParameterizedTest
     @ValueSource(strings = {
             "https://www.google.com", "http", "example.com", "a.au"

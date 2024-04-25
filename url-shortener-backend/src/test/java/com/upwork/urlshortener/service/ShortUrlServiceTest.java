@@ -16,8 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -51,7 +50,7 @@ class ShortUrlServiceTest {
         when(hashAlgo.hash(originalUrl)).thenReturn(HASH);
         when(repository.save(any(ShortUrl.class))).thenReturn(shortUrl);
 
-        ShortUrlResponse response = service.create(new ShortUrlRequest(originalUrl, 1), CONTEXT);
+        ShortUrlResponse response = service.create(new ShortUrlRequest(originalUrl, 1, null), CONTEXT);
 
         assertEquals(originalUrl, response.originalUrl());
         assertEquals(HASH, response.key());
@@ -62,7 +61,7 @@ class ShortUrlServiceTest {
     @Test
     void testCreationInvalidUrl() {
         String originalUrl = "google.com";
-        ShortUrlRequest request = new ShortUrlRequest(originalUrl, 1);
+        ShortUrlRequest request = new ShortUrlRequest(originalUrl, 1, null);
         assertThrows(InvalidUrlException.class, () -> service.create(request, CONTEXT));
     }
 
@@ -85,5 +84,16 @@ class ShortUrlServiceTest {
     void testDeleteExpired() {
         service.purgeExpiredUrls();
         verify(repository, times(1)).deleteAllExpired(any(LocalDateTime.class));
+    }
+
+    @Test
+    void testRedirect() {
+        when(repository.findByKey(HASH)).thenReturn(Optional.of(shortUrl));
+        ShortUrl url = service.redirect(HASH);
+        assertEquals("https://google.com", url.getOriginalUrl());
+        assertEquals(1, url.getRedirects());
+        assertNotNull(url.getVisitedAt());
+        verify(repository, times(1)).findByKey(HASH);
+        verify(repository, times(1)).save(shortUrl);
     }
 }
