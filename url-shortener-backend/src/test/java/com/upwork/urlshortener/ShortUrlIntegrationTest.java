@@ -1,11 +1,9 @@
-package com.upwork.urlshortener.controller;
+package com.upwork.urlshortener;
 
-import com.upwork.urlshortener.AbstractSpringIntegrationTest;
 import com.upwork.urlshortener.model.ShortUrl;
 import com.upwork.urlshortener.repository.ShortUrlRepository;
+import com.upwork.urlshortener.service.ShortUrlService;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
@@ -19,18 +17,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-class ShortUrlControllerIntegrationTest extends AbstractSpringIntegrationTest {
+class ShortUrlIntegrationTest extends AbstractSpringIntegrationTest {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(ShortUrlControllerIntegrationTest.class);
     private static final String HASH = "07ecc9";
     private static final String GOOGLE_COM = "https://www.google.com";
 
     @Autowired
-    protected ShortUrlRepository shortUrlRepository;
+    ShortUrlRepository repository;
+    @Autowired
+    ShortUrlService service;
+
 
     public void cleanAllDatabases() {
-        shortUrlRepository.deleteAll();
-        LOGGER.info("DATABASE CLEANED. LET'S GO!");
+        repository.deleteAll();
     }
 
     @Test
@@ -50,7 +49,7 @@ class ShortUrlControllerIntegrationTest extends AbstractSpringIntegrationTest {
                 .andExpect(jsonPath("$.original_url").value(GOOGLE_COM))
         ;
 
-        Optional<ShortUrl> shortUrl = shortUrlRepository.findByKey(HASH);
+        Optional<ShortUrl> shortUrl = repository.findByKey(HASH);
         assertTrue(shortUrl.isPresent());
         assertEquals(HASH, shortUrl.get().getKey());
         assertTrue(shortUrl.get().getExpiresAt().isAfter(LocalDateTime.now()));
@@ -99,15 +98,29 @@ class ShortUrlControllerIntegrationTest extends AbstractSpringIntegrationTest {
                 .andExpect(status().isMovedPermanently())
                 .andExpect(header().string("Location", GOOGLE_COM));
 
-        shortUrlRepository.findByKey(HASH).ifPresent(url -> assertEquals(2, url.getRedirects()));
+        repository.findByKey(HASH).ifPresent(url -> assertEquals(2, url.getRedirects()));
     }
 
     private void insertOneUrl() {
-        shortUrlRepository.save(ShortUrl.builder()
+        repository.save(ShortUrl.builder()
                 .key(HASH)
                 .originalUrl(GOOGLE_COM)
                 .url("https://localhost/" + HASH)
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .build());
+    }
+
+    @Test
+    void testPurgeExpiredUrls() {
+        ShortUrl shortUrl = ShortUrl.builder()
+                .key(HASH)
+                .originalUrl(GOOGLE_COM)
+                .url("https://localhost/" + HASH)
+                .expiresAt(LocalDateTime.now().minusDays(1))
+                .build();
+        repository.save(shortUrl);
+        assertEquals(1, repository.count());
+        service.purgeExpiredUrls();
+        assertEquals(0, repository.count());
     }
 }

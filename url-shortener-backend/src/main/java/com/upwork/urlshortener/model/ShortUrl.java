@@ -20,6 +20,10 @@ public class ShortUrl {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Column(name = "hashed_key", unique = true, nullable = false)
     @Length(max = 8)
     private String key;
