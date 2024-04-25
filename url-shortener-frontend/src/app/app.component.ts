@@ -8,7 +8,7 @@ import { ShortenerService } from './services/shortener.service';
 })
 export class AppComponent {
   url = signal('');
-  validDays = signal('');
+  validDays = signal(1);
   shortenedUrl = signal('');
   error = signal(false);
   isLoading = signal(false);

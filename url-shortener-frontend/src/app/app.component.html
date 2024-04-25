@@ -10,7 +10,7 @@
   class="columns is-flex is-align-items-center is-flex-direction-column mt-5"
 >
   <fieldset class="box">
-    <h1 class="title">Upwork Url Shortener</h1>
+    <legend>Upwork Url Shortener</legend>
     <input
       class="input my-1"
       type="text"
@@ -23,6 +23,7 @@
       class="input my-1"
       type="number"
       placeholder="Expiration in days"
+      title="Expiration time in days"
       [ngModel]="validDays()"
     />
     <button

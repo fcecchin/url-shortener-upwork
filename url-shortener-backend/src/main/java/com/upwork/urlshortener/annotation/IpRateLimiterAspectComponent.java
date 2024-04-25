@@ -56,7 +56,7 @@ public class IpRateLimiterAspectComponent {
             }
         }
 
-        LOGGER.info("Key '{}' sent reuqests '{}' times", key, ipRateLimitData.getAmount());
+        LOGGER.info("Key '{}' sent requests '{}' times", key, ipRateLimitData.getAmount());
 
         ipRateLimitDataMap.put(key, ipRateLimitData);
 
