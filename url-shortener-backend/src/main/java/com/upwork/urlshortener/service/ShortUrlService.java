@@ -2,6 +2,8 @@ package com.upwork.urlshortener.service;
 
 import com.upwork.urlshortener.dto.ShortUrlRequest;
 import com.upwork.urlshortener.dto.ShortUrlResponse;
+import com.upwork.urlshortener.exception.InvalidUrlException;
+import com.upwork.urlshortener.exception.ResourceNotFoundException;
 import com.upwork.urlshortener.hash.Hash;
 import com.upwork.urlshortener.model.ShortUrl;
 import com.upwork.urlshortener.repository.ShortUrlRepository;
@@ -11,12 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.net.URL;
+import java.net.URI;
 import java.time.LocalDateTime;
 
 @Service
@@ -38,11 +38,12 @@ public class ShortUrlService {
         validateUrl(requestBody.url());
         String hashed = hashAlgorithm.hash(requestBody.url());
         ShortUrl saved = repository.findByKey(hashed).orElseGet(() -> {
-            ShortUrl url = new ShortUrl();
-            url.setOriginalUrl(requestBody.url());
-            url.setKey(hashed);
-            url.setUrl(context + "/" + hashed);
-            url.setExpiresAt(LocalDateTime.now().plusDays(validDays));
+            ShortUrl url = ShortUrl.builder()
+                    .originalUrl(requestBody.url())
+                    .key(hashed)
+                    .url(context + "/" + hashed)
+                    .expiresAt(LocalDateTime.now().plusDays(validDays))
+                    .build();
             return repository.save(url);
         });
         LOGGER.info("URL created from {} to {}", saved.getOriginalUrl(), saved.getUrl());
@@ -52,7 +53,7 @@ public class ShortUrlService {
     @Cacheable(value = "hashedUrls", key = "#hashed", unless = "#result.redirects < 10")
     public ShortUrl findByHash(String hashed) {
         return repository.findByKey(hashed)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "URL not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("URL not found"));
     }
 
 
@@ -76,10 +77,10 @@ public class ShortUrlService {
 
     private void validateUrl(@NotNull(message = "Missing field: url") String url) {
         try {
-            new URL(url).toURI();
+            URI.create(url).toURL();
         } catch (Exception e) {
             LOGGER.error("Invalid URL: {}", url);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid URL: " + e.getMessage());
+            throw new InvalidUrlException("Invalid URL: " + e.getMessage());
         }
     }
 }

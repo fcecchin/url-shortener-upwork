@@ -34,4 +34,4 @@ build them and allow you to access it as [http://localhost:8888](http://localhos
 ## References
 
 - https://www.baeldung.com/spring-boot-evict-cache
-- 
+- https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.testing.testcontainers.service-connections
