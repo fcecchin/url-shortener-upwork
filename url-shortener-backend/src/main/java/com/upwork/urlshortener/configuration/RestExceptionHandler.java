@@ -2,23 +2,25 @@ package com.upwork.urlshortener.configuration;
 
 import com.upwork.urlshortener.exception.InvalidUrlException;
 import com.upwork.urlshortener.exception.ResourceNotFoundException;
-import org.springframework.http.*;
+import org.slf4j.Logger;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @ControllerAdvice
-public class RestExceptionHandler extends ResponseEntityExceptionHandler {
+public class RestExceptionHandler {
 
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(RestExceptionHandler.class);
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ProblemDetail handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         final List<String> errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.add(error.getDefaultMessage()));
@@ -26,7 +28,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         ex.getBindingResult().getGlobalErrors()
                 .forEach(error -> errors.add(error.getObjectName() + ": " + error.getDefaultMessage()));
 
-        return handleExceptionInternal(ex, errors, headers, HttpStatus.BAD_REQUEST, request);
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, errors.toString());
     }
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -51,7 +53,8 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    ProblemDetail handleGeneralException() {
+    ProblemDetail handleGeneralException(Exception ex) {
+        LOGGER.error("Exception: {}", ex.getMessage());
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Sorry. We have some problem now");
     }
 }

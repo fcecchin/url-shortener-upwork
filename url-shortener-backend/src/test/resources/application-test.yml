@@ -1,14 +1,3 @@
 # Number of days a URL will be keep in the database
 application:
   valid-days: ${APP_VALID_DAYS:5}
-
-
-spring:
-# Database configuration
-  datasource:
-    username: root
-    driver-class-name: com.mysql.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: create
-    show-sql: true

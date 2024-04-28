@@ -76,7 +76,7 @@ class ShortUrlControllerTest {
         this.mockMvc.perform(post("/")
                         .content("""
                                 {
-                                    "url-wrong": "www. google.com",
+                                    "url-wrong": "www. google.com"
                                 }
                                 """)
                         .contentType(MediaType.APPLICATION_JSON_VALUE)

@@ -8,7 +8,6 @@ import com.upwork.urlshortener.exception.ResourceNotFoundException;
 import com.upwork.urlshortener.hash.Hash;
 import com.upwork.urlshortener.model.ShortUrl;
 import com.upwork.urlshortener.repository.ShortUrlRepository;
-import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +39,6 @@ public class ShortUrlService {
         this.hashAlgorithm = hashAlgo;
     }
 
-    @Transactional
     public ShortUrlResponse create(ShortUrlRequest requestBody, String context) {
         String decodedUrl = URLDecoder.decode(requestBody.url(), StandardCharsets.UTF_8);
         validateUrl(decodedUrl);
@@ -69,9 +67,7 @@ public class ShortUrlService {
     public ShortUrl redirect(String hashed) {
         ShortUrl url = findByHash(hashed);
         // increment number of redirects (clicks) done to this URL
-        url.setRedirects(url.getRedirects() + 1);
-        url.setVisitedAt(LocalDateTime.now());
-        repository.save(url);
+        repository.findAndIncrementVisitsByKey(url.getKey(), LocalDateTime.now());
         return url;
     }
 
@@ -82,7 +78,6 @@ public class ShortUrlService {
     }
 
 
-    @Transactional
     public void delete(String hashed) {
         ShortUrl url = findByHash(hashed);
 
@@ -93,7 +88,6 @@ public class ShortUrlService {
     /**
      * Scheduled task that purgues all expired URLs. Runs every day at 1am
      */
-    @Transactional
     @Scheduled(cron = "0 0 1 * * *")
     @CacheEvict(value = "hashedUrls", allEntries = true)
     public void purgeExpiredUrls() {

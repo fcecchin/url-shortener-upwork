@@ -11,10 +11,16 @@ import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
 class ShortUrlIntegrationTest extends AbstractSpringIntegrationTest {
@@ -79,8 +85,8 @@ class ShortUrlIntegrationTest extends AbstractSpringIntegrationTest {
         repository.findByKey(HASH).ifPresent(url -> {
             assertEquals(1, url.getRedirects());
             assertNotNull(url.getVisitedAt());
+            assertTrue(url.getVisitedAt().isAfter(LocalDateTime.now().minusSeconds(10)));
         });
-
     }
 
     @Test

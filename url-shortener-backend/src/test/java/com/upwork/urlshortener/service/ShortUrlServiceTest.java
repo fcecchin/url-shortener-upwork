@@ -91,9 +91,7 @@ class ShortUrlServiceTest {
         when(repository.findByKey(HASH)).thenReturn(Optional.of(shortUrl));
         ShortUrl url = service.redirect(HASH);
         assertEquals("https://google.com", url.getOriginalUrl());
-        assertEquals(1, url.getRedirects());
-        assertNotNull(url.getVisitedAt());
         verify(repository, times(1)).findByKey(HASH);
-        verify(repository, times(1)).save(shortUrl);
+        verify(repository, times(1)).findAndIncrementVisitsByKey(anyString(), any(LocalDateTime.class));
     }
 }
